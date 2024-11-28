@@ -1,1 +1,358 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>お悩み相談チャット</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #1c1c1c;
+    color: #fff;
+    margin: 0;
+    padding: 20px;
+  }
+  header {
+    text-align: center;
+    font-size: 1.8em;
+    margin-bottom: 20px;
+    color: #fff;
+    font-weight: bold;
+  }
+  .chat-container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: #333;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  }
+  .form-group {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+  }
+  label {
+    margin-right: 10px;
+    margin-left: 10px;
+    min-width: 100px;
+  }
+  select, input, textarea, button {
+    font-family: inherit;
+    font-size: 1em;
+    padding: 5px;
+    border: none;
+    border-radius: 5px;
+  }
+  input, select {
+    background-color: #555;
+    color: #fff;
+    width: 150px;
+  }
+  textarea {
+    background-color: #555;
+    color: #fff;
+    width: 100%;
+    resize: none;
+    margin-bottom: 10px;
+    height: 80px;
+  }
+  button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    padding: 10px;
+    width: 140px;
+    margin-top: 10px;
+    margin-left: 30px;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+  .chat-output {
+    margin-top: 20px;
+    background-color: #2c2c2c;
+    border-radius: 5px;
+    padding: 10px;
+    max-height: 450px;
+    overflow-y: auto;
+  }
+  .message {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .avatar {
+    width: 50px;
+    height: 50px;
+    background-color: #444;
+    border-radius: 50%;
+    margin-right: 10px;
+    background-size: cover;
+    background-position: center;
+  }
+  .message-content {
+    background-color: #444;
+    padding: 10px;
+    border-radius: 10px;
+    flex: 1;
+  }
+  .message-content p {
+    margin: 0;
+  }
+  .message-content span {
+    display: block;
+    font-size: 0.8em;
+    color: #aaa;
+    margin-top: 5px;
+  }
+</style>
+</head>
+<body>
 
+<header>どんな悩みもやさしく受け止める チャッティーの相談チャット</header>
+
+<div class="chat-container">
+  <!-- 上部フォーム -->
+  <div class="form-group">
+    <label for="theme">テーマの部屋:</label>
+    <select id="theme">
+      <option value="進路や仕事">進路や仕事</option>
+      <option value="家族や人間関係">家族や人間関係</option>
+      <option value="自分の内面や生き方">自分の内面や生き方</option>
+    </select>
+    <label for="username">名前:</label>
+    <input type="text" id="username" placeholder="名前を入力">
+    <label for="age">年齢:</label>
+    <input type="number" id="age" placeholder="年齢">
+    <label for="gender">性別:</label>
+    <select id="gender">
+      <option value="男性">男性</option>
+      <option value="女性">女性</option>
+      <option value="その他">その他</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="verification">本人確認:</label>
+    <select id="verification">
+      <option value="確認済み">確認済み</option>
+      <option value="未確認">未確認</option>
+    </select>
+    <label for="wisdomPoints">知恵ポイント:</label>
+    <input type="number" id="wisdomPoints" placeholder="ポイント">
+  </div>
+
+  <!-- メッセージ入力 -->
+  <textarea id="message" placeholder="メッセージを入力"></textarea>
+  <div class="form-group">
+    <label for="language">翻訳先言語:</label>
+    <select id="language">
+      <option value="en">英語</option>
+      <option value="ja">日本語</option>
+      <option value="zh-CN">中国語</option>
+      <option value="ko">韓国語</option>
+      <option value="es">スペイン語</option>
+      <option value="fr">フランス語</option>
+      <option value="de">ドイツ語</option>
+    </select>
+    <button id="send-normal">通常のチャット</button>
+    <button id="send-ai">AIとチャット</button>
+  </div>
+
+  <!-- チャット出力 -->
+  <div id="output" class="chat-output"></div>
+</div>
+
+
+<!--/ コンテンツ表示画面 -->
+
+<!-- JQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+<!--** Firebase設定 **-->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import { getDatabase, ref, push, set, onChildAdded } 
+from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+
+// Firebase設定
+const firebaseConfig = {
+  apiKey: "AIzaSyDo1x1sl1rDcw7W9OoYoE91CbH-vIjy6sg",
+  authDomain: "sample-b9cb1.firebaseapp.com",
+  projectId: "sample-b9cb1",
+  storageBucket: "sample-b9cb1.firebasestorage.app",
+  messagingSenderId: "282960114663",
+  appId: "1:282960114663:web:d4a6a7dfe29ad3af6a0342"
+};
+
+// Firebase初期化
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const dbRef = ref(db, "chat");
+
+// Google Cloud Translation APIを使用した翻訳
+async function translateMessage(text, targetLanguage) {
+  const apiKey = "AIzaSyCBhYWr5aDp6--BOwqByO8cH2QJzYjuUWQ"; // ここにGoogle Cloud APIキーを設定
+  const url = `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      q: text,
+      target: targetLanguage
+    }),
+  });
+  if (!response.ok) {
+    const errorDetails = await response.json();
+    console.error("Translation APIエラーの詳細:", errorDetails);
+    throw new Error(`Translation APIエラー: ${response.status}`);
+  }
+  const data = await response.json();
+  return data.data.translations[0].translatedText;
+}
+
+// OpenAI APIキー
+const openAIKey = "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"; // OpenAI APIキーを入力
+
+// **【通常のチャット】**
+$("#send-normal").on("click", async function () {
+  const username = $("#username").val() || "匿名";
+  const originalMessage = $("#message").val();
+  const targetLanguage = $("#language").val();
+  if (!originalMessage.trim()) {
+    alert("メッセージを入力してください！");
+    return;
+  }
+
+  // メッセージを翻訳
+  const translatedMessage = await translateMessage(originalMessage, targetLanguage);
+
+  const msg = {
+    username: username,
+    translatedMessage: translatedMessage,
+    originalMessage: originalMessage, // 元のメッセージも保存
+    language: targetLanguage, // 翻訳先言語を記録
+    timestamp: new Date().toISOString() // ISO形式でタイムスタンプを追加
+  };
+
+  const newPostRef = push(dbRef);
+  set(newPostRef, msg);
+  $("#message").val(""); // メッセージ入力欄をクリア
+});
+
+// **【AIとのチャット】**
+$("#send-ai").on("click", async function () {
+  const username = $("#username").val() || "匿名";
+  const originalMessage = $("#message").val();
+  const targetLanguage = $("#language").val();
+  if (!originalMessage.trim()) {
+    alert("メッセージを入力してください！");
+    return;
+  }
+
+  // ChatGPTにメッセージを送信
+  const chatGPTResponse = await getChatGPTResponse(originalMessage);
+
+  // メッセージを翻訳
+  const translatedMessage = await translateMessage(originalMessage, targetLanguage);
+
+  // Firebaseにユーザーのメッセージを保存
+  const userMsg = {
+    username: username,
+    originalMessage: originalMessage, // 元のメッセージも保存
+    translatedMessage: translatedMessage, // ユーザーの翻訳メッセージを保存
+    language: targetLanguage, // 翻訳先言語を記録
+    timestamp: new Date().toISOString() // ISO形式でタイムスタンプを追加
+  };
+  const userPostRef = push(dbRef);
+  set(userPostRef, userMsg);
+
+  // メッセージを翻訳
+  const chatGPTTranslatedMessage  = await translateMessage(chatGPTResponse, targetLanguage);
+
+  // FirebaseにChatGPTの応答を保存
+  const aiMsg = {
+    username: "chatGPT",
+    chatGPTResponse: chatGPTResponse,
+    chatGPTTranslatedMessage: chatGPTTranslatedMessage, // ChatGPTの翻訳メッセージを保存
+    language: targetLanguage, // 翻訳先言語を記録
+    timestamp: new Date().toISOString() // ISO形式でタイムスタンプを追加
+  };
+  const aiPostRef = push(dbRef);
+  set(aiPostRef, aiMsg);
+
+  $("#message").val(""); // メッセージ入力欄をクリア
+});
+
+// ChatGPTからの応答を取得
+async function getChatGPTResponse(userMessage) {
+  const apiURL = "https://api.openai.com/v1/chat/completions"; // 修正: 新しいエンドポイント
+  const prompt = `ユーザー: ${userMessage}\nChatGPT:`;
+
+  try {
+    const response = await fetch(apiURL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${openAIKey}`, // 正しいAPIキー
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo", // 新しいモデル指定
+        messages: [{ role: "user", content: userMessage }],
+        max_tokens: 150,
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorDetails = await response.json();
+      console.error("APIエラーの詳細:", errorDetails);
+      return `エラー: APIリクエストに失敗しました (${response.status})`;
+    }
+
+    const data = await response.json();
+    return data.choices[0]?.message?.content?.trim() || "エラー: 応答が取得できませんでした。";
+  } catch (error) {
+    console.error("ネットワークまたはコードのエラー:", error);
+    return "エラー: ChatGPTへの接続に失敗しました。";
+  }
+}
+
+// Firebaseからデータを取得して表示
+onChildAdded(dbRef, function (data) {
+  const msg = data.val();
+  const date = new Date(msg.timestamp);
+  const formattedDate = date.toLocaleDateString("ja-JP", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  // アバター画像のURLを設定（ユーザーによって変更可能）
+  const avatarURL = msg.username !== "chatGPT" 
+    ? "./avatar_sample1.png" // ユーザーのデフォルトアバター
+    : "./avatar_sample2.png"; // ChatGPT用のアバター
+
+  // メッセージのHTMLを作成
+  const messageHTML = `
+    <div class="message ${msg.username !== "chatGPT" ? "user-message" : "ai-message"}">
+      <div class="avatar" style="background-image: url('${avatarURL}');"></div>
+      <div class="message-content">
+        <p><strong>${msg.username}:</strong> (${formattedDate})</p>
+        <p>${msg.originalMessage || msg.chatGPTResponse}</p>
+        <p><em>${msg.translatedMessage || msg.chatGPTTranslatedMessage}</em></p>
+      </div>
+    </div>
+  `;
+
+  // 出力エリアにメッセージを追加
+  $("#output").prepend(messageHTML);
+});
+
+</script>
+
+</body>
+</html>
